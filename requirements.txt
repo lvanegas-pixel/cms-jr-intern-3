@@ -1,0 +1,12 @@
+# Genesal Jr. — base dependencies
+# Pinned so every intern's environment is identical.
+# Rule: add ONLY what you install directly. Do NOT run `pip freeze > requirements.txt`
+# blindly — it dumps every sub-dependency and makes reviews unreadable.
+
+Django==5.1.4
+djangorestframework==3.15.2
+python-dotenv==1.0.1
+
+# --- dev / testing ---
+pytest==8.3.4
+pytest-django==4.9.0

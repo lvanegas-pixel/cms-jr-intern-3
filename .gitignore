@@ -1,0 +1,38 @@
+# ─── Secrets (NUNCA se commitean) ───────────────────────────
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+
+# ─── Python / venv ──────────────────────────────────────────
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# ─── Django ─────────────────────────────────────────────────
+*.log
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+/static/
+
+# ─── Testing / coverage ─────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ─── IDE ────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+
+# ─── OS ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
