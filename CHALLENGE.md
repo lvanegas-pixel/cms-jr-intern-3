@@ -1,205 +1,260 @@
-# 🚀 Reto 2 — Evolucionar el CMS Jr.: separar Backend y Frontend
+# 🚀 Reto de la semana: **CMS Jr.**
 
-> Tu API ya funciona: tiene modelos, las 3 reglas y tests. Bien.
-> Ahora toca el salto de "funciona en mi máquina" a **"una API que otra persona
-> puede usar sin preguntarte nada"**. Eso es lo que separa un ejercicio de un
-> producto.
+> Bienvenid@ a Invelon. Esta semana no vas a tocar código de clientes todavía.
+> Vas a construir, desde cero y en tu propio repo, una versión en miniatura de un
+> tipo de sistema **real** que tenemos en producción: un **CMS** (gestor de
+> contenido) multi-usuario con roles y permisos.
 >
-> El reto tiene 3 fases y van en orden. No empieces la web hasta cerrar la API.
+> Cuando acabes, vas a reconocer la arquitectura de nuestros proyectos reales
+> porque la habrás vivido en pequeño. Ese es el objetivo: no "hacer una práctica",
+> sino **entrar al código real sin perderte**.
 
 ---
 
-## 🧠 La idea de fondo: dos capas, no una
+## 🎯 El contexto
 
-Hasta ahora todo tu proyecto es **backend**: Django sirviendo datos. En este reto
-vas a añadir un **frontend**, y lo importante no es la web en sí — es que entiendas
-que son **dos capas separadas con responsabilidades distintas**:
+Un CMS tiene un catálogo de contenido que gestionan varias personas con **roles
+distintos**: administradores y comerciales. No todos ven lo mismo, y nadie puede
+tocar lo que no es suyo.
 
+Tu misión: construir una API REST que gestione eso, en versión mínima.
+La llamamos **CMS Jr.**
+
+## 🧱 Qué vas a construir
+
+Una API en **Django + Django REST Framework** con dos entidades:
+
+### `Project` (un proyecto del catálogo)
+- `name` — texto, obligatorio, mínimo 3 caracteres.
+- `owner` — el usuario (comercial) dueño del proyecto.
+- `created_at` — fecha automática.
+
+### `Asset` (un elemento de contenido dentro de un proyecto)
+- `project` — a qué proyecto pertenece.
+- `name` — texto, obligatorio.
+- `asset_type` — uno de: `MODEL_3D`, `IMAGE`, `VIDEO`.
+- `is_public` — booleano, por defecto `False`.
+
+## 📐 Las 3 reglas que lo hacen interesante
+
+Esto NO es un CRUD normal. Hay 3 reglas que te van a hacer pensar *dónde* va cada
+cosa. En Invelon, **el sitio importa tanto como que funcione.**
+
+### Regla 1 — Validación de negocio (va en el Serializer)
+> Un `Project` solo puede tener **un** `Asset` de tipo `MODEL_3D`.
+> (En un CMS real, un proyecto tiene un único modelo 3D principal.)
+
+Si alguien intenta crear un segundo `MODEL_3D` en el mismo proyecto, la API lo
+rechaza con un error claro. **Esta lógica vive en el Serializer, nunca en la vista.**
+
+### Regla 2 — Scoping por rol (quién ve qué)
+> - Un usuario con rol `commercial` solo ve **sus** proyectos (los que tiene como `owner`).
+> - Un usuario con rol `admin` ve **todos** los proyectos.
+
+### Regla 3 — Anti-trampa (va en una Permission Class)
+> Nadie puede crear un `Asset` dentro de un proyecto que **no es suyo**.
+> Si lo intentas, la API responde con **403** (o 404, pregúntale a tu mentor por qué
+> a veces es mejor 404).
+
+**Las reglas 2 y 3 viven en una Permission Class, NUNCA dentro de la vista.**
+
+## ✅ Qué significa "terminado" en Invelon
+
+Un endpoint NO está terminado solo porque "funciona". Está terminado cuando:
+- [ ] La validación de negocio está **en el serializer**.
+- [ ] Los permisos están **en una Permission Class**, no en la vista.
+- [ ] La vista (ViewSet) está **delgada**: sin lógica de negocio dentro.
+- [ ] Tiene **al menos un test** con pytest que lo prueba.
+- [ ] Todo el código y comentarios están **en inglés**.
+- [ ] Hay **type hints y docstrings** donde toca.
+- [ ] Pasó por un **Pull Request** en GitHub (ver sección Git abajo).
+
+---
+
+## 🌿 Git & GitHub — el flujo profesional (OBLIGATORIO)
+
+Trabajas en **GitHub**. Cada vez que tocas algo, lo haces en una rama y lo integras
+con un **Pull Request (PR)**. En algunos proyectos de Invelon verás que a esto le
+llaman *Merge Request (MR)*: es exactamente lo mismo, solo cambia el nombre entre
+GitHub (PR) y GitLab (MR).
+
+**No se evalúa solo que el código funcione: se evalúa cómo usas Git.**
+
+### Lo mínimo que tienes que dominar esta semana
+
+**1. Clonar y configurar**
+```bash
+git clone https://github.com/<tu-repo>.git
+cd <tu-repo>
 ```
-┌─────────────────┐      HTTP / JSON       ┌──────────────────┐
-│    FRONTEND     │ ───── fetch() ──────►  │     BACKEND      │
-│  (HTML/CSS/JS)  │                        │  (Django + DRF)  │
-│  "la vista"     │ ◄──── respuesta ─────  │  "los datos"     │
-└─────────────────┘                        └──────────────────┘
-        │                                           │
-   NO toca la BD                              Dueño de la BD,
-   NO conoce los modelos                      la lógica y las reglas
-   SOLO habla por la API                      NO sabe nada del HTML
+
+**2. Crear una rama por cada tarea** (nunca trabajes directo en `main`)
+```bash
+git checkout -b feature/3-project-serializer-validation
+```
+Convención: `feature/<numero-issue>-descripcion-corta`.
+
+**3. Guardar tu trabajo: add → commit → push**
+```bash
+git add .
+git commit -m "Add MODEL_3D uniqueness validation in serializer"
+git push -u origin feature/3-project-serializer-validation
 ```
 
-**La regla mental:** el frontend **nunca** toca la base de datos ni los modelos.
-Solo pide datos a la API y los pinta. El backend **nunca** sabe cómo se ven los
-datos; solo los sirve y protege. Si un día cambias la web entera, el backend no se
-entera. Si cambias la base de datos, la web no se entera. **Esa independencia es
-todo el punto.**
+**4. Traer cambios del remoto: fetch vs pull** (tienes que saber la diferencia)
+- `git fetch` → **descarga** los cambios del remoto pero NO los aplica a tu rama.
+  Sirve para "mirar antes de tocar".
+- `git pull` → `fetch` + `merge`: descarga **y** fusiona en tu rama actual.
+```bash
+git fetch origin
+git pull origin main
+```
 
-> En Invelon esto es así de verdad: en proyectos como los de Aurora el backend
-> (Django/DRF) y el cliente (web o app móvil) son mundos separados que solo se
-> hablan por la API. Aquí lo vives en pequeño.
+**5. Rebase: reescribir tu historia sobre la última base**
+Cuando `main` avanzó mientras tú trabajabas, pon tus commits *encima* de lo nuevo:
+```bash
+git fetch origin
+git rebase origin/main
+# si hay conflictos: los resuelves, luego:
+git add .
+git rebase --continue
+```
+> Diferencia clave que te van a preguntar: **merge** conserva la historia tal cual
+> (crea un commit de merge); **rebase** la reescribe en línea recta (más limpia).
+> Regla de la casa: **rebase para actualizar tu rama; merge (vía PR) para integrar a `main`.**
 
----
+**6. Squash: juntar varios commits en uno limpio**
+Si hiciste 5 commits tipo "wip", "fix", "otra vez", únelos en uno solo antes del PR:
+```bash
+git rebase -i origin/main
+# en el editor: deja 'pick' en el primero y 'squash' (o 's') en los demás
+```
+Un PR con un historial limpio (1-2 commits con mensaje claro) vale más que 10 commits "asdf".
 
-## 📏 Reglas del reto
+**7. Abrir el Pull Request**
+- Push de tu rama → ve a GitHub → botón **"Compare & pull request"**.
+- Base: `main` ← Compare: tu rama.
+- **Título claro** + **descripción**: qué hace y cómo probarlo.
+- Asigna a tu mentor como revisor.
 
-1. Trabajas sobre **tu repo actual** (`cms-jr-intern-1`), en ramas nuevas. Un PR por fase.
-2. Sigue el flujo de siempre: rama → commits limpios → PR → revisión. Aplica lo del git-kata.
-3. **Puedes usar IA para entender y construir, pero no subas nada que no sepas explicar.**
-   En la revisión te pediré que defiendas cada decisión.
-4. Todo en **inglés**. Type hints y docstrings donde toque.
+**8. El PR se revisa, no se auto-mergea**
+Tu mentor deja comentarios. Corriges **en la misma rama** (nuevo commit o amend +
+push) y el PR se actualiza solo. Cuando está aprobado → merge.
 
----
+**9. Release + tag (el viernes): marcar una versión**
+Cuando `main` tiene tu trabajo terminado, marcas una **versión** con un *tag*. Así
+se sabe qué commit exacto es la release `0.1.0` (igual que el doc 3 de Invelon).
+```bash
+git checkout main
+git pull origin main
+git tag -a v0.1.0 -m "First working release: CMS Jr. API"
+git push origin v0.1.0
+```
+Después, en GitHub → pestaña **Releases** → **Draft a new release** → eliges el tag
+`v0.1.0`, pones título y pegas tus **Release Notes** (qué hiciste en esta versión).
+> Versionado semántico (SemVer): `MAJOR.MINOR.PATCH` → `v0.1.0`.
+> - `PATCH` (0.0.**X**) = un bugfix. `MINOR` (0.**X**.0) = nueva funcionalidad.
+> - `MAJOR` (**X**.0.0) = cambio que rompe compatibilidad.
 
-## 🎯 FASE 1 — Definir bien la API
+### Glosario rápido Git
 
-Ahora mismo tu API "va", pero tiene agujeros que solo se ven cuando alguien la usa
-de verdad. Tu trabajo es cerrarlos. **No te doy la solución: te doy las preguntas.**
-
-### 1.1 Autenticación — ¿quién entra?
-Tu API usa permisos por usuario, pero... ¿cómo se loguea alguien que no sea desde
-el admin de Django? Ahora mismo un cliente externo (Postman, una web) **no tiene
-forma clara de autenticarse**.
-- Investiga cómo expone DRF la autenticación (empieza por `SessionAuthentication`
-  y `TokenAuthentication`).
-- Decide una y configúrala. Deja claro en el README cómo se autentica alguien.
-
-### 1.2 Paginación — ¿y si hay 10.000 proyectos?
-Prueba: crea 30 proyectos y haz `GET /api/projects/`. Te devuelve **todos** de golpe.
-Eso no escala.
-- Activa la paginación de DRF (`PageNumberPagination`).
-- ¿Qué pasa ahora con la respuesta? ¿Qué campos nuevos aparecen?
-
-### 1.3 Filtros y búsqueda — ¿cómo busco?
-Un comercial quiere ver solo sus assets de tipo `MODEL_3D`. Ahora no puede filtrar.
-- Añade filtros (mira `django-filter` y `SearchFilter` de DRF).
-- Objetivo: poder hacer `GET /api/assets/?asset_type=IMAGE` y
-  `GET /api/projects/?search=<nombre>`.
-
-### 1.4 Repasa tu propia lógica (code-review a ti mismo)
-Lee tu `permissions.py` con ojo crítico y responde en el PR:
-- En `has_permission`, lees `request.data.get('project')` para el POST. **¿Qué pasa
-  si alguien manda un `project` que no existe, o no manda ninguno?** Pruébalo.
-- Tu `Project.name` es `unique=True` global. ¿Tiene sentido que **dos comerciales
-  distintos** no puedan tener un proyecto con el mismo nombre? ¿Cómo lo arreglarías?
-  (pista: `unique_together` / `UniqueConstraint`)
-- El error de la Regla 1 dice `'allowed.'` pegado a la palabra anterior. Búscalo. 🐛
-
-> No hace falta que resuelvas los 3 puntos de 1.4 a la perfección. Hace falta que
-> los **veas** y digas qué harías. Ver el problema es media solución.
-
-### 📦 Entrega Fase 1
-PR titulado `feat: harden API (auth, pagination, filters)` con:
-- Autenticación funcionando.
-- Paginación activa.
-- Al menos un filtro operativo.
-- En la descripción del PR: tus respuestas a 1.4.
-
----
-
-## 🧪 FASE 2 — Probar TODA la API con Postman
-
-Una API no está terminada hasta que está **probada desde fuera**. Vas a montar una
-colección de Postman que recorre todos los endpoints.
-
-### 2.1 Crea una colección `CMS Jr.`
-Con una **variable de entorno** `{{base_url}}` = `http://127.0.0.1:8000`. (Así no
-repites la URL en cada request. Es como lo hacemos en Invelon.)
-
-### 2.2 Cubre los 5 endpoints CRUD × 2 recursos
-Para `projects` y `assets`:
-
-| Método | Endpoint | Qué pruebas |
-|---|---|---|
-| `GET` | `/api/projects/` | Lista (¿paginada?) |
-| `POST` | `/api/projects/` | Crear |
-| `GET` | `/api/projects/{id}/` | Detalle |
-| `PATCH` | `/api/projects/{id}/` | Editar |
-| `DELETE` | `/api/projects/{id}/` | Borrar |
-
-### 2.3 Prueba también lo que DEBE fallar (esto es lo importante)
-Un buen tester no prueba solo el camino feliz. Captura en Postman:
-- Crear un **2º `MODEL_3D`** en el mismo proyecto → debe dar **400** (Regla 1).
-- Tocar el proyecto de **otro usuario** → debe dar **403/404** (Regla 3).
-- Petición **sin autenticar** → debe dar **401/403**.
-
-### 2.4 Autenticación en Postman
-Configura el login (token o sesión, lo que elegiste en 1.1) para que las requests
-vayan autenticadas. Documenta cómo se obtiene el token.
-
-### 📦 Entrega Fase 2
-- **Exporta la colección** (`.json`) y súbela al repo en una carpeta `/postman`.
-- En el PR, pega **capturas** de: 1 caso feliz, el 400 de la Regla 1, y el 403 de la Regla 3.
-
-> 🎤 En la revisión te preguntaré: *"enséñame en vivo un 403"*. Si lo reproduces en
-> 10 segundos, es que entiendes tus permisos.
+| Término | Qué es |
+|---|---|
+| `clone` | Copiar el repo remoto a tu máquina. |
+| `branch` | Línea de trabajo paralela. Una por tarea. |
+| `commit` | Guardar un cambio en la historia, con mensaje. |
+| `push` | Subir tus commits al remoto. |
+| `fetch` | Descargar cambios remotos SIN fusionarlos. |
+| `pull` | `fetch` + `merge` en tu rama actual. |
+| `merge` | Fusionar una rama en otra (conserva historia). |
+| `rebase` | Reaplicar tus commits sobre otra base (historia lineal). |
+| `squash` | Combinar varios commits en uno. |
+| `PR` (Pull Request) | Petición de integrar tu rama a `main`, con revisión. En GitLab = `MR`. |
+| `tag` | Etiqueta fija sobre un commit para marcar una versión (`v0.1.0`). |
+| `release` | Versión publicada en GitHub a partir de un tag, con sus notas. |
 
 ---
 
-## 🌐 FASE 3 — El Frontend: una capa separada que consume tu API
+## 🔍 Revisión de código y lógica (cómo te vamos a evaluar)
 
-Ahora construyes el **frontend**: HTML + CSS + JavaScript puro (sin frameworks) que
-vive en el repo y consume tu API por `fetch()`. Aquí es donde las dos capas del
-diagrama de arriba se vuelven reales.
+Cada PR pasa por **dos revisiones**, no una:
 
-**La prueba de que lo hiciste bien:** tu carpeta `/frontend` no importa **nada** de
-Django. No conoce tus modelos, no toca la base de datos, no sabe qué es un
-serializer. Solo hace peticiones HTTP a `http://127.0.0.1:8000/api/...` y pinta lo
-que recibe. Si borraras toda la carpeta `catalog/` y levantaras otro backend
-distinto que responda igual, tu web seguiría funcionando. **Eso es separar capas.**
+1. **Revisión de código** — ¿está en el sitio correcto? ¿validación en el serializer?
+   ¿permisos en Permission Class? ¿vista delgada? ¿inglés, type hints, docstrings?
+   ¿historial Git limpio?
+2. **Revisión de lógica** — ¿la regla de negocio es *correcta*, no solo que corre?
+   ¿cubre los casos límite? ¿el 403/404 salta cuando debe? ¿el test prueba de verdad
+   lo que dice que prueba, o pasa por casualidad?
 
-### 3.1 Qué tiene que hacer la web
-Una sola página que:
-1. **Liste los proyectos** (llamando a `GET /api/projects/`).
-2. Permita **crear un proyecto** nuevo desde un formulario (`POST`).
-3. Al pinchar un proyecto, **muestre sus assets**.
-4. Maneje el caso de **error** (si la API devuelve 400/403, enséñalo en pantalla, no
-   en la consola).
+> Un PR puede "funcionar" y **no** pasar la revisión. Si la lógica está en el lugar
+> equivocado o el test no prueba nada real, se rebota con feedback para que lo
+> corrijas tú. Así se trabaja aquí.
 
-No tiene que ser bonita. Tiene que **funcionar y usar la API de verdad**.
+### 🎤 Defiende tu Git (revisión oral)
 
-### 3.2 Dónde ponerla
-Carpeta `/frontend` en el repo con `index.html`, `style.css`, `app.js`.
-Arráncala simple: `python -m http.server` o la extensión Live Server de VS Code.
+En la revisión, el mentor te va a pedir que **expliques con tus palabras** lo que
+hiciste. No vale "lo hice porque lo decía el enunciado". Prepárate para responder:
 
-### 3.3 El muro con el que vas a chocar (y está bien)
-Cuando tu web en `localhost:5500` llame a tu API en `localhost:8000`, el navegador
-te va a **bloquear la petición**. Es el error **CORS**. No es un bug tuyo: es
-seguridad del navegador.
-- Investiga qué es CORS y por qué salta.
-- Resuélvelo en el backend (pista: `django-cors-headers`).
-- **En el PR explica con tus palabras: ¿qué es CORS y por qué el navegador lo hace?**
+- ¿Qué hace **rebase** y en qué se diferencia de **merge**? ¿Por qué usaste uno u otro?
+- ¿Para qué hiciste **squash** y qué pasó con tus commits "wip"?
+- Diferencia entre **fetch** y **pull**. ¿Cuándo usas cada uno?
+- ¿Qué es un **tag** y por qué no basta con el nombre de la rama para marcar una release?
+- ¿Por qué la validación va en el **serializer** y no en la vista?
+- ¿Por qué los permisos van en una **Permission Class** y no con un `if` en la vista?
 
-> Este choque es intencionado. Todo el que conecta un frontend a un backend pasa por
-> aquí la primera vez. Resolverlo una vez = no volver a tenerle miedo.
+> Saber ejecutar el comando es la mitad. La otra mitad es **entender por qué**. Si
+> puedes explicárselo a otra persona, lo sabes de verdad. Eso es lo que evaluamos.
 
-### 📦 Entrega Fase 3
-PR con la carpeta `/frontend` funcionando + CORS resuelto + tu explicación de CORS.
+### 🤖 Sobre usar IA (ChatGPT, Copilot, etc.)
+
+**Puedes usar IA. No está prohibido y no es hacer trampa.** En Invelon usamos estas
+herramientas todos los días. Pero el objetivo de este reto NO es entregar código:
+es que **tú domines lo que entregas.**
+
+La regla es simple:
+
+> **No subas ni una línea que no sepas explicar.**
+
+Si la IA te da una solución, tu trabajo no termina ahí — empieza ahí:
+- Entiéndela línea por línea. ¿Por qué esto y no otra cosa?
+- ¿Dónde la colocarías tú? (¿serializer? ¿permiso? ¿vista?) La IA no conoce *nuestras*
+  reglas de arquitectura; tú sí tienes que conocerlas.
+- Reescríbela con tus palabras / a tu manera. Si no puedes, es que no la entiendes aún.
+
+En la revisión oral se nota al instante quién entendió y quién copió y pegó. Un
+código perfecto que no sabes defender vale **menos** que un código con un fallo que
+sabes explicar y arreglar. Aquí preferimos lo segundo.
+
+**Úsala como un tutor que te explica, no como una máquina que te hace el trabajo.**
 
 ---
 
-## 🏁 Cierre
+## 🗺️ El recorrido de la semana
 
-Cuando cierres las 3 fases, tu repo pasa de "una API de ejercicio" a **"un servicio
-con su cliente, documentado y probado"**. Eso ya se parece a lo que hacemos en
-proyectos reales.
+| Día | Qué consigues |
+|---|---|
+| **Lun** | Entorno montado, server arrancando. Primer `clone` + rama. |
+| **Mar** | Modelos `Project` + `Asset`, el admin, la Regla 1, y tu primer **PR**. |
+| **Mié** | La API viva: ViewSets + Reglas 2 y 3. Probada en Postman. |
+| **Jue** | Tests con pytest + pruebas el repo de tu compañer@ (rebase/squash en práctica). |
+| **Vie** | Cierras el ciclo: **tag `v0.1.0` + release en GitHub** + Release Notes. Revisión oral. 🏅 |
 
-Marca una versión: `git tag -a v0.2.0 -m "API hardened + Postman + web client"` y
-una Release en GitHub con las notas de lo que añadiste.
+## 🧭 Pistas (no soluciones)
 
-### ✅ Antes de dar por terminado
-- [ ] La API tiene auth, paginación y al menos un filtro.
-- [ ] Viste los 3 problemas de la sección 1.4 (aunque no los resolvieras todos).
-- [ ] Hay una colección de Postman en `/postman` que prueba casos felices **y** de error.
-- [ ] La web lista y crea proyectos consumiendo la API por `fetch`.
-- [ ] CORS resuelto y sabes explicar qué es.
-- [ ] Tag `v0.2.0` + Release.
+- Antes de escribir una línea, abre la **pre-flight checklist** del doc 4 ("La Pausa").
+  ¿DRF ya tiene algo nativo para esto? Casi siempre sí.
+- Para la Regla 1: busca el método `validate()` de los serializers de DRF.
+- Para las Reglas 2 y 3: busca "DRF custom permission classes" y `get_queryset`.
+- El `403` de la Regla 3 lo pruebas creando 2 usuarios en el admin: logueas con uno
+  e intentas tocar el proyecto del otro desde Postman.
 
-### 🎤 Prepárate para defender en la revisión
-- **¿Por qué separamos backend y frontend? ¿Qué responsabilidad tiene cada capa?**
-- ¿Tu frontend podría funcionar con un backend distinto? ¿Por qué sí/no?
-- ¿Qué autenticación elegiste y por qué?
-- ¿Por qué CORS es un problema del navegador y no de tu Django?
-- Enséñame un 403 en vivo desde Postman.
-- Si tuvieras 10.000 proyectos, ¿qué endpoint reventaría y cómo lo evitaste?
+## 🆘 Si te bloqueas
 
-**Bloqueado más de 30 min → paras y lo apuntas.** Llegas a la revisión con dudas
-escritas, no con la pantalla en blanco.
+Regla de la casa: **bloqueado más de 30 minutos → paras y lo apuntas.** No pierdas
+media mañana atascado en silencio. Llega a las revisiones con dudas escritas, no
+con la pantalla en blanco.
+
+**Nunca** commitees tu archivo `.env` ni la carpeta `venv/`. (Ya hay un `.gitignore`
+en el repo base que te protege — míralo el primer día y entiende por qué.)
+
+¡A por ello! 🔥
