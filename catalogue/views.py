@@ -73,6 +73,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 class AssetViewSet(viewsets.ModelViewSet):
 
     serializer_class = AssetSerializer
+
     permission_classes = [AssetPermission]
 
     def get_queryset(self):
