@@ -23,3 +23,4 @@ urlpatterns = [
     path('api/', include('catalogue.urls')),
     path('api/login/', obtain_auth_token),
 ]
+
