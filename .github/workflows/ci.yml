@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   hello-world:
-    runs-on: localhost:8000
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repositorio
