@@ -1,0 +1,22 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  hello-world:
+    runs-on: localhost:8000
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configuracion Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.3'
+
+      - name: Mostrar mensaje
+        run: echo "Primer workflow de GitHub"
+
+      - name: Mostrar la versión de Python
+        run: python --version
