@@ -14,11 +14,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from pathlib import Path
+
 from django.contrib import admin
 from django.urls import include, path
 from django.views.static import serve
 from rest_framework.authtoken.views import obtain_auth_token
-from pathlib import Path
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 

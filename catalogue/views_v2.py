@@ -1,8 +1,5 @@
-from rest_framework.viewsets import ModelViewSet
 
 from .filters import AssetFilter, ProjectFilter
-from .models import Project
-from .permissions import CanManageProjectAssets, IsProjectOwnerOrAdmin
 from .serializers_v2 import AssetSerializerV2, ProjectSerializerV2
 from .views import AssetViewSet, ProjectViewSet
 

@@ -25,3 +25,9 @@ jobs:
 
       - name: Ejecutar pruebas de Django
         run: pytest
+
+      - name: Instalar Ruff
+        run: pip install ruff
+
+      - name: Run Ruff
+        run: ruff check .
