@@ -15,12 +15,8 @@ jobs:
         with:
           python-version: '3.12.3'
 
-      - name: Mostrar mensaje
-        run: echo "Primer workflow de GitHub"
-
       - name: Mostrar la versión de Python
         run: python --version
-
 
       - name: Instalar dependencias
         run: |
@@ -28,5 +24,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Ejecutar pruebas de Django
-        run: |
-          pytest
+        run: pytest
